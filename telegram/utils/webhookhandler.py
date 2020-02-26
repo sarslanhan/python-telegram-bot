@@ -69,12 +69,23 @@ class WebhookServer(object):
                           client_address, exc_info=True)
 
 
+class HealthcheckHandler(tornado.web.RequestHandler):
+    def __init__(self, application, request, **kwargs):
+        super(HealthcheckHandler, self).__init__(application, request, **kwargs)
+        self.logger = logging.getLogger(__name__)
+
+    def get(self):
+        self.logger.debug('%s - Healthcheck called' % self.request.remote_ip)
+        self.write('I am alive!')
+
+
 class WebhookAppClass(tornado.web.Application):
 
     def __init__(self, webhook_path, bot, update_queue, default_quote=None):
         self.shared_objects = {"bot": bot, "update_queue": update_queue,
                                "default_quote": default_quote}
         handlers = [
+            (r"/healthz", HealthcheckHandler),
             (r"{0}/?".format(webhook_path), WebhookHandler,
              self.shared_objects)
             ]  # noqa
